@@ -198,7 +198,9 @@ class ActionProposal:
 
     @property
     def requires_explicit_approval(self) -> bool:
-        return self.action_class in {
-            ActionClass.CONSEQUENTIAL,
-            ActionClass.RESTRICTED,
-        }
+        return self.action_class is ActionClass.CONSEQUENTIAL
+
+    @property
+    def is_restricted(self) -> bool:
+        """Restricted actions are denied; an approval cannot make them executable."""
+        return self.action_class is ActionClass.RESTRICTED
