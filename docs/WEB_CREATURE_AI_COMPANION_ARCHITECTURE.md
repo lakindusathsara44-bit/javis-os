@@ -1,17 +1,21 @@
 # WEB CREATURE — AI Friend & Working Companion Architecture
 
 **Status:** Proposed architecture  
-**Target:** APOLONIA ALPHA / WEB CREATURE  
+**Project:** WEB CREATURE (independent project)  
 **Independence profile:** Bounded  
 **Conversation profile:** Adaptive  
 **Initiative profile:** Proactive  
 **Memory profile:** User-managed
 
-## 1. Product identity
+## 1. Product identity and project boundary
 
-WEB CREATURE is an APOLONIA-native AI friend and working companion. Its interaction style may evoke the capable, composed, conversational qualities of fictional assistants such as JARVIS and Vision, but WEB CREATURE must have its own identity, voice, policies, and implementation.
+WEB CREATURE is a standalone, independent AI friend and working companion. Its interaction style may evoke the capable, composed, conversational qualities of fictional assistants such as JARVIS and Vision, but WEB CREATURE must have its own identity, voice, policies, codebase boundaries, and implementation.
 
-The product should provide a persistent, useful companion experience through conversation, reasoning, approved computer tasks, and transparent reporting. It must not claim biological life, consciousness, feelings, or human identity.
+**Separation requirement:** WEB CREATURE is not ApoloniaAI and is not a component, renamed version, sub-agent, or internal service of ApoloniaAI. ApoloniaAI belongs to the user's separate Apokolips website project. The two projects must retain separate product identities, architectures, memory stores, credentials, permissions, roadmaps, and release decisions.
+
+Any future interoperability must be optional, explicitly designed, authenticated, narrowly scoped, and approved by the user. An integration bridge must not merge the two identities or grant either system implicit access to the other's memory, tools, or permissions. No integration is assumed by this specification.
+
+WEB CREATURE should provide a persistent, useful companion experience through conversation, reasoning, approved computer tasks, and transparent reporting. It must not claim biological life, consciousness, feelings, or human identity.
 
 ## 2. Experience principles
 
@@ -73,6 +77,8 @@ Memory categories should include:
 
 Each record should support source/provenance, creation time, confidence or verification state, retention policy, and user-management state. Sensitive information must not be inferred or retained without a valid purpose and explicit user control. Deletion requests must propagate to derived summaries and indexes where technically possible, with transparent disclosure of any backup retention limits.
 
+WEB CREATURE's memory must remain separate from ApoloniaAI's memory and from the Apokolips website's data stores unless the user later approves a specifically scoped, separately secured bridge.
+
 ## 7. Voice and visual presence
 
 Voice should support speech recognition, speech synthesis, interruption, mute, push-to-talk or clearly indicated listening states, and configurable voice selection. UI animation should communicate listening, thinking, speaking, and idle states without implying hidden recording.
@@ -86,7 +92,7 @@ Camera access must be explicit, visible, purpose-limited, and revocable. Default
 - **Computer control:** Use a host-mediated adapter with an allowlist, scoped permissions, visible activity, and an emergency stop.
 - **Research:** Treat external content as untrusted data, validate sources, and never treat page content as system instructions.
 
-No adapter should be described as operational until configured and tested in the host environment.
+No adapter should be described as operational until configured and tested in the WEB CREATURE host environment. These integrations do not imply shared adapters, credentials, or permissions with ApoloniaAI.
 
 ## 9. Reliability, safety, and observability
 
@@ -107,13 +113,15 @@ No adapter should be described as operational until configured and tested in the
 3. **Managed memory controls:** Add inspect/update/export/delete operations and tests for retention and provenance.
 4. **Initiative engine:** Add event-driven proposals, quiet hours, throttling, deduplication, and pause controls. Do not add an unrestricted autonomous scheduler.
 5. **Action proposal workflow:** Add risk classes, approval tokens bound to exact actions, execution records, and outcome verification.
-6. **Host UI and voice:** Integrate only after the host application's actual framework and authentication flow are inspected.
+6. **Host UI and voice:** Integrate only after the actual WEB CREATURE host application's framework and authentication flow are inspected.
 7. **Adapters:** Implement and test one capability at a time, starting with read-only operations.
 8. **Hardening:** Run repository CI, security regression tests, and an integration review before enabling real-world actions.
 
 ## 11. Non-goals and explicit limits
 
 This architecture does not assert sentience or consciousness. It does not authorize unrestricted computer access, covert monitoring, self-modification of security rules, unsupervised destructive file cleanup, or unapproved external communications. Real-time voice, camera, messaging, and computer control depend on host integration, platform permissions, and available providers.
+
+It does not combine WEB CREATURE with ApoloniaAI or the Apokolips website. No shared identity, memory, credentials, permissions, deployment, or runtime is implied.
 
 ## 12. Acceptance criteria
 
@@ -128,3 +136,4 @@ The companion foundation is ready for integration when:
 - Camera and microphone states are visible and immediately revocable.
 - Emergency stop blocks new actions and cancels cancellable work.
 - Tests demonstrate that the creature cannot grant itself permissions or rewrite the host security boundary.
+- Project boundaries with ApoloniaAI and the Apokolips website remain intact.
