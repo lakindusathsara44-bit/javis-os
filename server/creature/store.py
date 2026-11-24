@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from contextlib import closing
+import hashlib
 import json
 import sqlite3
 from pathlib import Path
@@ -67,7 +68,7 @@ class CreatureStore:
 
     def initialize(self) -> None:
         self.database_path.parent.mkdir(parents=True, exist_ok=True)
-        with closing(self._connect()) as connection:
+        with closing(self._connect()) as connection, connection:
             connection.executescript(_SCHEMA)
             # Upgrade databases created by foundation v0.1 without dropping data.
             columns = {row["name"] for row in connection.execute("PRAGMA table_info(creature_memory)")}
@@ -81,6 +82,16 @@ class CreatureStore:
             for name, declaration in migrations.items():
                 if name not in columns:
                     connection.execute(f"ALTER TABLE creature_memory ADD COLUMN {name} {declaration}")
+            # Backfill hashes for memories created by foundation v0.1.
+            legacy_rows = connection.execute(
+                "SELECT id, content FROM creature_memory WHERE content_hash = ''"
+            ).fetchall()
+            for row in legacy_rows:
+                digest = hashlib.sha256(row["content"].encode("utf-8")).hexdigest()
+                connection.execute(
+                    "UPDATE creature_memory SET content_hash = ? WHERE id = ?",
+                    (digest, row["id"]),
+                )
 
     def _connect(self) -> sqlite3.Connection:
         connection = sqlite3.connect(str(self.database_path), timeout=5.0)
