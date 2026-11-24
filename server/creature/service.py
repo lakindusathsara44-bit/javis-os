@@ -6,6 +6,8 @@ from .lifecycle import CreatureLifecycle
 from .models import CreatureEvent, CreatureGoal, CreatureMemory, CreatureState, GoalStatus
 from .permissions import CapabilityPolicy
 from .store import CreatureStore
+from .observation import LocalFileObserver, LocalObservation
+from .research import ResearchEngine, ResearchPlan, ResearchReport
 
 
 class CreatureService:
@@ -16,6 +18,9 @@ class CreatureService:
         identity: CreatureIdentity,
         store: CreatureStore,
         policy: CapabilityPolicy | None = None,
+        *,
+        local_observer: LocalFileObserver | None = None,
+        research_engine: ResearchEngine | None = None,
     ) -> None:
         if not isinstance(identity, CreatureIdentity):
             raise TypeError("identity must be a CreatureIdentity")
@@ -26,6 +31,12 @@ class CreatureService:
         self.policy = policy if policy is not None else CapabilityPolicy()
         if not isinstance(self.policy, CapabilityPolicy):
             raise TypeError("policy must be a CapabilityPolicy")
+        if local_observer is not None and not isinstance(local_observer, LocalFileObserver):
+            raise TypeError("local_observer must be a LocalFileObserver or None")
+        if research_engine is not None and not isinstance(research_engine, ResearchEngine):
+            raise TypeError("research_engine must be a ResearchEngine or None")
+        self.local_observer = local_observer
+        self.research_engine = research_engine
         self.lifecycle = CreatureLifecycle()
 
     @property
@@ -102,3 +113,32 @@ class CreatureService:
         updated = self.store.transition_goal(goal_id, target)
         self._audit("goal.transitioned", goal_id=goal_id, status=updated["status"])
         return updated
+
+    def observe_local_file(self, path: str) -> LocalObservation:
+        self.policy.require("local.read")
+        if self.status != CreatureState.ACTIVE:
+            raise RuntimeError("creature must be active to observe local files")
+        if self.local_observer is None:
+            raise RuntimeError("no host-approved local observer is configured")
+        observation = self.local_observer.read_text(path)
+        self._audit(
+            "observation.local_file", relative_path=observation.relative_path,
+            content_hash=observation.content_hash, size_bytes=observation.size_bytes,
+        )
+        return observation
+
+    def research(self, plan: ResearchPlan) -> ResearchReport:
+        self.policy.require("web.read")
+        if self.status != CreatureState.ACTIVE:
+            raise RuntimeError("creature must be active to research web sources")
+        if self.research_engine is None:
+            raise RuntimeError("no host-approved research transport is configured")
+        report = self.research_engine.run(plan)
+        self._audit(
+            "research.completed",
+            question=report.question,
+            source_count=len(report.sources),
+            source_hashes=[source.content_hash for source in report.sources],
+            domains=[source.domain for source in report.sources],
+        )
+        return report
