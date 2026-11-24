@@ -5,8 +5,11 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
+try:
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+except ModuleNotFoundError:
+    raise unittest.SkipTest("FastAPI is installed in the full application CI, not the stdlib-only focused job")
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
