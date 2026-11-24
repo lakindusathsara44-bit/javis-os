@@ -87,8 +87,12 @@ class PasswordHasher:
                 f"password must contain {_PASSWORD_MIN_LENGTH}-{_PASSWORD_MAX_LENGTH} characters"
             )
         salt = secrets.token_bytes(16)
+        try:
+            encoded = password.encode("utf-8")
+        except UnicodeEncodeError:
+            raise ValueError("password must contain valid Unicode text") from None
         digest = hashlib.pbkdf2_hmac(
-            "sha256", password.encode("utf-8"), salt, _PASSWORD_ITERATIONS
+            "sha256", encoded, salt, _PASSWORD_ITERATIONS
         )
         return (
             base64.urlsafe_b64encode(salt).decode("ascii"),
@@ -109,9 +113,11 @@ class PasswordHasher:
             return False
         if len(salt) != 16 or len(expected) != 32:
             return False
-        actual = hashlib.pbkdf2_hmac(
-            "sha256", password.encode("utf-8"), salt, iterations
-        )
+        try:
+            encoded = password.encode("utf-8")
+        except UnicodeEncodeError:
+            return False
+        actual = hashlib.pbkdf2_hmac("sha256", encoded, salt, iterations)
         return hmac.compare_digest(actual, expected)
 
 
@@ -271,10 +277,20 @@ class AccountStore:
         if not isinstance(token, str) or not 20 <= len(token) <= 200:
             raise PermissionError("invalid or unavailable invitation")
         normalized = normalize_email(email)
-        salt, digest, iterations = PasswordHasher.hash_password(password)
         now = _now()
         account_id = str(uuid4())
         token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+        # Reject unknown/expired tokens before expensive password derivation.
+        # Re-check under the write lock below to close the race window.
+        with self._connection() as db:
+            preview = db.execute(
+                """SELECT expires_at FROM creature_invitations
+                   WHERE token_sha256=? AND revoked_at IS NULL AND uses < max_uses""",
+                (token_hash,),
+            ).fetchone()
+        if preview is None or now >= _parse_time(preview["expires_at"]):
+            raise PermissionError("invalid or unavailable invitation")
+        salt, digest, iterations = PasswordHasher.hash_password(password)
         with self._connection() as db:
             db.execute("BEGIN IMMEDIATE")
             invite = db.execute(
