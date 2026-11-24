@@ -55,6 +55,28 @@ The website can operate without a paired Desktop Agent. Local computer control i
 
 The domain layer provides invitation primitives only. The web host must supply secure authentication, persistence, session management, CSRF protection where applicable, rate limiting and email delivery.
 
+
+## 4A. Account and session implementation contract
+
+The initial SQLite account-store slice provides:
+- One-time owner bootstrap (trusted local setup only; never expose as a public HTTP route).
+- Owner-only invitation creation and revocation.
+- Invitation acceptance that atomically consumes a use and creates a member account.
+- Password hashing with the Python standard-library scrypt KDF and per-account random salt.
+- Generic login failure responses, random opaque session tokens, SHA-256-only token storage, expiry and revocation.
+- Session resolution returns only the authenticated account identity; every application query must still include that user ID as its ownership scope.
+
+The account store is a domain persistence component, not a complete production login website. Before Internet deployment, the trusted web host must implement and verify:
+1. TLS-only access, secure deployment secrets and a database volume readable only by the WEB CREATURE service account.
+2. Login and invitation endpoint rate limits, abuse controls and generic error responses.
+3. HttpOnly, Secure, SameSite cookies; CSRF protection for cookie-authenticated mutations; no session tokens in URLs, localStorage or logs.
+4. Session rotation after authentication and privilege changes, logout/revocation, expiry handling and owner recovery procedures.
+5. Email verification/delivery if invitations are delivered by email; invitation token delivery must never appear in public logs or analytics.
+6. Per-request authorization and owner-scoped queries for every conversation, memory, device, invitation and audit record.
+7. Atomic database backups, encryption-at-rest where supported, retention and restore testing.
+
+The first owner must be provisioned through a trusted local setup command or controlled deployment operation. No public owner bootstrap endpoint is permitted. No public self-registration is permitted.
+
 ## 5. Website and Desktop Agent trust boundary
 
 The website is a cloud control plane; the Desktop Agent is a local execution plane. They communicate over an authenticated, encrypted, outbound-established connection. Do not expose a raw unauthenticated local control port to the Internet.
