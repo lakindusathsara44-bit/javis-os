@@ -11,7 +11,7 @@ _ID_PATTERN = re.compile(r"^[a-z][a-z0-9-]{2,63}$")
 class CreatureIdentity:
     creature_id: str
     name: str = "WEB CREATURE"
-    platform: str = "APOLONIA ALPHA"
+    platform: str = "INDEPENDENT WEB CREATURE"
     schema_version: int = 1
 
     def __post_init__(self) -> None:

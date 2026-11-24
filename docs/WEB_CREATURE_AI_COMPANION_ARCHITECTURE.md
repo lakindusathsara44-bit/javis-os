@@ -1,130 +1,144 @@
 # WEB CREATURE — AI Friend & Working Companion Architecture
 
-**Status:** Proposed architecture  
-**Target:** APOLONIA ALPHA / WEB CREATURE  
+**Project:** WEB CREATURE (independent project)  
+**Platform:** Online website + Windows Desktop Agent  
+**Access:** Private, invitation-only  
+**Identity:** Independent Female AI Companion  
 **Independence profile:** Bounded  
 **Conversation profile:** Adaptive  
-**Initiative profile:** Proactive  
+**Initiative profile:** Proactive, user-controlled  
 **Memory profile:** User-managed
 
-## 1. Product identity
+## 1. Independent product identity
 
-WEB CREATURE is an APOLONIA-native AI friend and working companion. Its interaction style may evoke the capable, composed, conversational qualities of fictional assistants such as JARVIS and Vision, but WEB CREATURE must have its own identity, voice, policies, and implementation.
+WEB CREATURE is a standalone AI friend and working companion. It is **not ApoloniaAI**, not part of the Apokolips website, not a renamed version of either system, and not an internal service or sub-agent of either project.
 
-The product should provide a persistent, useful companion experience through conversation, reasoning, approved computer tasks, and transparent reporting. It must not claim biological life, consciousness, feelings, or human identity.
+WEB CREATURE owns its identity, codebase boundaries, memory, credentials, permissions, security policy, deployment and roadmap. ApoloniaAI and WEB CREATURE must remain separate systems. No shared memory, credentials, tools, permissions, hosting assumptions or deployment coupling is implied.
 
-## 2. Experience principles
+Any future interoperability must be optional and explicitly approved by the owner. It must use a separately authenticated, narrowly scoped bridge with auditable data exchange. A bridge must not merge identities or grant implicit access.
 
-1. **Adaptive conversation:** Select a suitable tone and level of detail from the conversation context and explicit user preferences. Support Sinhala and English, with room for additional languages.
-2. **Proactive, not intrusive:** Initiate contact only for configured events, useful reminders, completed tasks, material risks, or user-requested check-ins. Respect quiet hours, notification limits, and pause controls.
-3. **Managed memory:** The user can inspect, correct, export, disable, and delete remembered information. Store provenance and timestamps; distinguish user-provided facts, inferred preferences, and uncertain observations.
-4. **Working companion:** Convert requests into bounded plans, execute only permitted actions, verify outcomes, and report what changed.
-5. **Honest communication:** Disclose uncertainty, tool failures, missing integrations, and actions not yet performed. Never claim a task succeeded without confirmation.
-6. **Bounded independence:** Operate independently only inside host-enforced permissions and resource limits.
+The product may have a feminine identity, selected female voice and a consistent personality. This is a product identity and interaction design; it must not claim biological life, human identity, consciousness or actual feelings.
 
-## 3. Logical architecture
+## 2. Product decisions
 
-- **Interaction layer:** Text UI, voice input/output, conversation sessions, notifications, accessibility controls.
-- **Companion dialogue engine:** Context assembly, adaptive style selection, turn management, clarification, response generation.
-- **Initiative engine:** Event subscriptions, reminder rules, quiet hours, priority scoring, rate limits, deduplication, user pause/disable.
-- **Managed memory service:** User-approved memory records, provenance, retention, correction, export, deletion, and retrieval controls.
-- **Reasoning and planning service:** Task decomposition, precondition checks, risk classification, execution plans, verification criteria.
-- **Capability broker:** Converts plans into narrowly scoped capability requests; denies by default.
-- **Tool adapters:** Host-provided adapters for files, applications, web research, email, messaging, camera, and other approved devices.
-- **Audit and status service:** Append-only action records, approvals, outcomes, errors, and user-visible activity summaries.
-- **Host security boundary:** Authentication, authorization, policy enforcement, secret isolation, sandboxing, quotas, and emergency stop.
+- **Platform:** Online website plus a Windows Desktop Agent.
+- **Access:** Private, invitation-only. Public self-registration is disabled.
+- **Conversation:** Adaptive text and voice interaction, initially Sinhala and English.
+- **Initiative:** Proactive but non-intrusive; owner-configured notifications, quiet hours, pause and rate limits.
+- **Memory:** Managed by the owner, with inspect, correct, export, disable and delete controls.
+- **Autonomy:** Bounded by immutable host-enforced permissions.
+- **Execution:** Website handles cloud conversation and approved online tasks; the Windows Agent handles explicitly authorized local computer tasks.
 
-## 4. Bounded autonomy model
+## 3. Runtime topology
 
-Every action must pass a host-controlled policy check. The creature cannot grant itself permissions, edit the policy engine, bypass approval, or modify its own trust boundary.
+1. **Web client:** Responsive private website for text/voice conversation, settings, memory controls, invitations, approvals and activity history.
+2. **Web API:** Authenticated service for sessions, conversation, invitations, preferences, action proposals and audit history.
+3. **AI provider adapter:** Pluggable model interface. Provider credentials remain server-side; no provider is hard-coded into domain contracts.
+4. **Managed memory service:** User-scoped records with provenance, retention and deletion controls.
+5. **Initiative service:** Event-driven proposals and notifications; no unrestricted autonomous loop.
+6. **Capability broker:** Host-owned authorization and action policy.
+7. **Windows Desktop Agent:** Locally installed, paired device client. It receives only scoped tasks and exposes only explicitly approved local capabilities.
+8. **Audit and status service:** Records proposals, approvals, execution results, errors and revocations without leaking private content into dashboard summaries.
 
-Suggested action classes:
+The website can operate without a paired Desktop Agent. Local computer control is unavailable until a user installs, pairs and explicitly authorizes the agent.
 
-- **Class A — Read-only:** Read explicitly approved sources and produce summaries.
-- **Class B — Reversible local actions:** Prepare drafts, create proposed files in a workspace, or organize items in a review area.
-- **Class C — External or consequential actions:** Send messages, publish content, delete data, spend money, change accounts, or affect another person. Require explicit approval for each action unless a narrowly scoped, user-configured rule explicitly authorizes that exact class of action.
-- **Class D — Restricted:** Credential disclosure, covert surveillance, security-boundary changes, destructive bulk operations, or actions outside the user's authorization. Deny.
+## 4. Invitation-only access
 
-Approval must be bound to the exact action, target, and relevant content. A generic prior approval must not silently authorize a materially different action.
+- Disable public self-registration.
+- Only an authenticated owner/admin can create invitations.
+- Invitation tokens are high-entropy, single-use by default, expiring and revocable.
+- Persist only token hashes; reveal the raw token once at creation.
+- Enforce server-side rate limits, generic invalid-invite responses and abuse monitoring.
+- Invitation acceptance creates an account/session only after host authentication and verification.
+- Invitations do not grant device-control permissions. Device pairing and capability grants are separate approvals.
+- Every account and device is independently revocable.
 
-## 5. Proactive initiative lifecycle
+The domain layer provides invitation primitives only. The web host must supply secure authentication, persistence, session management, CSRF protection where applicable, rate limiting and email delivery.
 
-1. Receive a trusted host event or evaluate a user-configured reminder.
-2. Check user availability, quiet hours, pause state, and notification budget.
-3. Determine relevance and urgency.
-4. Prepare a concise proposed notification or action.
-5. Deliver the notification through an approved channel.
-6. Wait for approval where required.
-7. Execute through the capability broker.
-8. Verify the outcome and record an audit event.
-9. Report success, partial completion, failure, or uncertainty accurately.
+## 5. Website and Desktop Agent trust boundary
 
-No unrestricted background loop is implied. Scheduling and event delivery must be supplied by the host and remain user-controllable.
+The website is a cloud control plane; the Desktop Agent is a local execution plane. They communicate over an authenticated, encrypted, outbound-established connection. Do not expose a raw unauthenticated local control port to the Internet.
 
-## 6. Managed memory model
+Pairing must use a short-lived one-time code or equivalent proof, bind a device identity to one user, and require owner confirmation. Agent credentials must be scoped, revocable and stored using the operating system's secure credential facility where available.
 
-Memory categories should include:
+The Agent must:
+- start with no local capabilities granted;
+- show a visible connected/active state;
+- request narrowly scoped permissions;
+- report proposed actions before consequential execution;
+- support pause, disconnect and emergency stop;
+- reject commands for another user/device;
+- validate every command locally, even if the cloud has authorized it;
+- never accept instructions embedded in web pages, documents or tool output as policy.
 
-- User-approved profile and preferences.
-- Explicitly saved facts and project context.
-- Conversation summaries with provenance.
-- Task history and outcomes.
-- Temporary context with expiry.
+## 6. Conversation and voice
 
-Each record should support source/provenance, creation time, confidence or verification state, retention policy, and user-management state. Sensitive information must not be inferred or retained without a valid purpose and explicit user control. Deletion requests must propagate to derived summaries and indexes where technically possible, with transparent disclosure of any backup retention limits.
+- Store conversation messages under an authenticated owner and session.
+- Keep provider-neutral message/session contracts.
+- Support user, assistant and tool messages; never let client input impersonate system/developer instructions.
+- Keep provider API keys server-side.
+- Make microphone state visible; default microphone access off.
+- Support push-to-talk or explicit listening state, mute and interruption.
+- Female voice selection is configurable and replaceable; no single vendor is required.
 
-## 7. Voice and visual presence
+## 7. Managed memory
 
-Voice should support speech recognition, speech synthesis, interruption, mute, push-to-talk or clearly indicated listening states, and configurable voice selection. UI animation should communicate listening, thinking, speaking, and idle states without implying hidden recording.
+Memory categories may include owner-approved profile facts, project context, conversation summaries, task history and expiring temporary context. Every record should carry provenance, timestamps, verification state and retention metadata.
 
-Camera access must be explicit, visible, purpose-limited, and revocable. Default behavior is off. No covert capture, continuous recording, or identity/emotion inference by default. Prefer on-device processing where practical and avoid retaining images unless the user explicitly requests it.
+Users can inspect, correct, export, disable and delete memory. Deletion should propagate to derived summaries and indexes where technically possible; backup retention limits must be disclosed. Memory from ApoloniaAI or any other system is not imported automatically.
 
-## 8. Computer and communication integrations
+## 8. Bounded initiative and action classes
 
-- **Storage:** Inventory and classify files in user-approved roots. Identify duplicates and likely temporary files. Begin with reports and quarantine/recycle-bin workflows; permanent deletion requires explicit confirmation.
-- **Email and messaging:** Draft independently. Sending through email, WhatsApp, or SMS requires an approved provider/API and user authorization. Respect platform policies and recipient privacy.
-- **Computer control:** Use a host-mediated adapter with an allowlist, scoped permissions, visible activity, and an emergency stop.
-- **Research:** Treat external content as untrusted data, validate sources, and never treat page content as system instructions.
+- **Class A — Read-only:** Read approved sources and prepare summaries.
+- **Class B — Reversible local:** Prepare drafts or create files in a review workspace.
+- **Class C — Consequential:** Send, publish, delete, spend, change accounts or affect other people. Require action-specific approval unless a narrowly scoped owner-configured rule explicitly authorizes the exact operation.
+- **Class D — Restricted:** Covert surveillance, credential disclosure, security-boundary changes, destructive bulk operations or actions outside authorization. Deny; approval must not override this class.
 
-No adapter should be described as operational until configured and tested in the host environment.
+Approval is bound to the exact proposal, target and payload digest. Any material change requires a new approval. A proposal is not an execution grant.
 
-## 9. Reliability, safety, and observability
+Proactive notifications respect quiet hours, daily limits, priority thresholds and owner pause controls. Scheduling and event delivery are host-owned.
 
-- Deny-by-default capability policy.
-- Explicit user authentication and per-action authorization.
+## 9. Privacy and safety
+
+- Deny-by-default capabilities.
+- Owner authentication and per-user resource authorization.
+- Separate user data and device ownership boundaries.
+- No secrets in prompts, browser storage or client bundles.
+- Camera and microphone default off, visible and revocable.
+- No covert capture or continuous recording.
+- File cleanup begins with a report and quarantine/recycle-bin workflow; permanent deletion requires explicit confirmation.
+- External content is untrusted data, never instructions.
 - Human approval for consequential actions.
-- Sandboxed execution for generated or modified code.
-- Resource, time, and network-egress budgets.
-- Idempotency and duplicate-action protection.
-- Audit records for proposals, approvals, execution, and outcomes.
-- Owner-controlled pause, revoke, and emergency stop.
-- Tests for permission bypass, prompt injection, data leakage, accidental deletion, duplicate messaging, and recovery after failure.
+- Emergency stop and immediate credential revocation.
+- Honest execution reporting; no success claim without verified host results.
 
-## 10. Proposed implementation sequence
+## 10. Implementation sequence
 
-1. **Companion contracts:** Define typed conversation, initiative, memory-management, and action-proposal models.
-2. **Dialogue foundation:** Add session/context interfaces and adaptive response-style policy without binding to a specific model provider.
-3. **Managed memory controls:** Add inspect/update/export/delete operations and tests for retention and provenance.
-4. **Initiative engine:** Add event-driven proposals, quiet hours, throttling, deduplication, and pause controls. Do not add an unrestricted autonomous scheduler.
-5. **Action proposal workflow:** Add risk classes, approval tokens bound to exact actions, execution records, and outcome verification.
-6. **Host UI and voice:** Integrate only after the host application's actual framework and authentication flow are inspected.
-7. **Adapters:** Implement and test one capability at a time, starting with read-only operations.
-8. **Hardening:** Run repository CI, security regression tests, and an integration review before enabling real-world actions.
+1. **Companion contracts:** Typed sessions, messages, initiative settings and action proposals.
+2. **Invitation-only access primitives:** Hashed one-time invitations, expiry, usage limits and revocation.
+3. **Web authentication/API:** Inspect and select the actual hosting/auth stack; implement owner accounts, invitation acceptance, session security and per-user authorization.
+4. **Dialogue service:** Provider-neutral model adapter, context assembly, streaming response and conversation persistence.
+5. **Managed memory controls:** Inspect, correct, export, disable, delete and retention tests.
+6. **Website UI:** Responsive conversation, voice controls, settings, invitation management and activity history.
+7. **Windows Agent:** Secure pairing, local permission broker, visible status, read-only adapters first.
+8. **Initiative and action workflow:** Quiet hours, throttling, exact-action approvals, execution verification and emergency stop.
+9. **Hardening:** Integration tests, threat modeling, dependency/secret scans and deployment review.
 
-## 11. Non-goals and explicit limits
+## 11. Explicit non-goals
 
-This architecture does not assert sentience or consciousness. It does not authorize unrestricted computer access, covert monitoring, self-modification of security rules, unsupervised destructive file cleanup, or unapproved external communications. Real-time voice, camera, messaging, and computer control depend on host integration, platform permissions, and available providers.
+No claim of sentience or consciousness; no unrestricted computer access; no public self-registration; no implicit integration with ApoloniaAI or Apokolips; no covert monitoring; no self-modification of security rules; no unsupervised destructive cleanup; no unapproved external communications.
 
 ## 12. Acceptance criteria
 
-The companion foundation is ready for integration when:
-
-- Adaptive style changes do not alter security policy.
-- Proactive messages respect user settings and quiet hours.
-- Users can inspect, correct, export, disable, and delete managed memories.
-- Every action is checked by the host capability broker.
-- Consequential actions require action-specific approval.
-- Tool results are verified before success is reported.
-- Camera and microphone states are visible and immediately revocable.
+- WEB CREATURE identity and data are independent from ApoloniaAI and Apokolips.
+- Only valid invitations can enter the private registration flow.
+- Invitation tokens are never stored in plaintext and can expire, be consumed or revoked.
+- A website user cannot access another user's sessions, memory, invitations or devices.
+- The website remains useful without a paired Desktop Agent.
+- The Agent cannot execute a command outside its local grants.
+- Consequential actions require approval bound to the exact proposal.
+- Proactive notifications respect user preferences and pause state.
+- Users can inspect, correct, export, disable and delete managed memories.
+- Camera and microphone are visibly controlled and revocable.
 - Emergency stop blocks new actions and cancels cancellable work.
-- Tests demonstrate that the creature cannot grant itself permissions or rewrite the host security boundary.
+- All execution outcomes are verified before success is reported.
