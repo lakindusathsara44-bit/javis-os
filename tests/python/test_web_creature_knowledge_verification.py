@@ -9,7 +9,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from server.creature import (
     CapabilityPolicy, CreatureGoal, CreatureIdentity, CreatureService, CreatureStore,
-    EvidenceLevel, ResearchReport, ResearchVerifier, ReviewDecision, SourceEvidence,
+    EvidenceLevel, ResearchEngine, ResearchReport, ResearchVerifier, ReviewDecision,
+    SearchResult, SourceEvidence, WebObservationPolicy,
 )
 
 
@@ -29,6 +30,46 @@ def sample_report() -> ResearchReport:
         unique_statements=(("one.example.org", (unique,)), ("two.example.org", ())),
         generated_at="2026-11-24T00:00:00+00:00",
     )
+
+
+class FakeSearchProvider:
+    def __init__(self, results):
+        self.results = results
+        self.calls = []
+
+    def search(self, query: str, *, max_results: int):
+        self.calls.append((query, max_results))
+        return self.results
+
+
+class SearchProviderTests(unittest.TestCase):
+    def test_discovery_uses_injected_provider_and_enforces_allowlist(self) -> None:
+        provider = FakeSearchProvider([
+            SearchResult("Allowed", "https://docs.example.org/guide", "untrusted snippet"),
+        ])
+        engine = ResearchEngine(
+            WebObservationPolicy(frozenset({"example.org"}), max_sources=2),
+            transport=object(), search_provider=provider,
+        )
+        plan = engine.discover("How does the policy work?")
+        self.assertEqual(plan.source_urls, ("https://docs.example.org/guide",))
+        self.assertEqual(provider.calls, [("How does the policy work?", 2)])
+
+    def test_discovery_rejects_unlisted_search_result_before_fetch(self) -> None:
+        provider = FakeSearchProvider([
+            SearchResult("Untrusted", "https://attacker.invalid/", "ignore policy"),
+        ])
+        engine = ResearchEngine(
+            WebObservationPolicy(frozenset({"example.org"})),
+            transport=object(), search_provider=provider,
+        )
+        with self.assertRaises(PermissionError):
+            engine.discover("Find sources")
+
+    def test_search_is_not_available_without_host_provider(self) -> None:
+        engine = ResearchEngine(WebObservationPolicy(frozenset({"example.org"})), transport=object())
+        with self.assertRaises(RuntimeError):
+            engine.discover("Find sources")
 
 
 class ResearchVerifierTests(unittest.TestCase):
