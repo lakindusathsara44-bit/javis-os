@@ -4,7 +4,7 @@ title: WEB CREATURE private account store
 ---
 ## vi
 ### Thêm mới
-- **Tài khoản riêng tư.** Thêm lưu trữ tài khoản SQLite, bootstrap chủ sở hữu một lần, mật khẩu PBKDF2 và email chuẩn hóa.
+- **Tài khoản riêng tư.** Thêm lưu trữ tài khoản SQLite, lệnh CLI bootstrap chủ sở hữu một lần có xác nhận, mật khẩu PBKDF2 và email chuẩn hóa.
 - **Đăng ký theo lời mời.** Thêm token lời mời ngẫu nhiên, chỉ lưu SHA-256, có hạn dùng, thu hồi, giới hạn lượt dùng và tiêu thụ nguyên tử.
 - **Phiên đăng nhập.** Thêm token phiên ngẫu nhiên, chỉ lưu hash, có thời hạn, thu hồi từng phiên và thu hồi toàn bộ phiên thành viên bởi chủ sở hữu.
 - **Kiểm thử.** Thêm kiểm thử cho bootstrap, đăng ký, quyền chủ sở hữu, xác thực và thu hồi phiên.
@@ -16,7 +16,7 @@ title: WEB CREATURE private account store
 
 ## en
 ### Added
-- **Private accounts.** Adds SQLite account storage, one-time owner bootstrap, PBKDF2 password hashing and normalized unique email addresses.
+- **Private accounts.** Adds SQLite account storage, a confirmed one-time local owner-bootstrap CLI, PBKDF2 password hashing and normalized unique email addresses.
 - **Invitation-only registration.** Adds random invitation tokens, SHA-256-only persistence, expiry, revocation, use limits and atomic consumption.
 - **Login sessions.** Adds opaque random session tokens, hash-only persistence, expiry, individual revocation and owner-controlled member-session revocation.
 - **Tests.** Adds coverage for bootstrap, registration, owner permissions, authentication and session revocation.
