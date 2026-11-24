@@ -45,8 +45,8 @@ Internet content is untrusted input. Instructions found in pages, files, issues,
 | `lifecycle.py` | Explicit, validated state transitions |
 | `store.py` | Local SQLite persistence and schema initialization |
 | `service.py` | Small application facade; policy-gated operations |
-| Future `observation.py` | Local and allowlisted web observations |
-| Future `research.py` | Source collection, provenance and verification |
+| `observation.py` | Explicit-root local reads and allowlisted HTTPS destination policy |
+| `research.py` | Injected transport, source provenance, bounded extraction and cross-source comparison |
 | Future `goals.py` | Goal definition, priority and progress |
 | Future `skills.py` | Versioned skill registry and validation |
 | Future `evolution.py` | Candidate generation and evaluation orchestration |
@@ -151,14 +151,24 @@ All state-changing endpoints require host authentication, authorization, CSRF pr
 - unit tests;
 - no automatic startup or application wiring.
 
-### Next phases
+### Alpha 0.2 — Memory and goals
+- provenance-aware memory records, bounded retrieval and verification filters;
+- explicit goal states and capability-gated operations;
+- backwards-compatible SQLite migration and audit events.
+
+### Alpha 0.3 — Observation and research
+- local file reads only beneath host-configured roots, with symlink containment checks, extension and size limits;
+- HTTPS-only web URL policy with exact/subdomain allowlist matching and redirect validation;
+- no built-in network client: a trusted host transport must disable automatic redirects, pin public DNS results, reject private/reserved destinations, validate TLS and enforce streaming limits;
+- source content hashes, retrieval timestamps, bounded text extraction and exact shared/unique statement comparison;
+- research and local observation require separate explicit capabilities and are audit logged.
+
+### Remaining phases
 1. Host integration and configuration.
-2. Memory retrieval, provenance and retention.
-3. Goals and bounded scheduler.
-4. Local/web observation adapters.
-5. Skill registry, sandbox and evaluation.
-6. Git proposal/PR workflow.
-7. Authenticated API and dashboard.
-8. deployment, security and recovery testing.
+2. Bounded scheduler and goal execution.
+3. Skill registry, sandbox and evaluation.
+4. Git proposal/PR workflow.
+5. Authenticated API and dashboard.
+6. Deployment, security and recovery testing.
 
 Foundation is accepted only when tests cover identity validation, allowed/forbidden lifecycle transitions, default-deny permissions, persistence round trips and package import without side effects.
