@@ -5,6 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
 try:
     from fastapi import FastAPI
     from fastapi.testclient import TestClient
@@ -12,8 +14,6 @@ try:
     FASTAPI_AVAILABLE = True
 except ModuleNotFoundError:
     FASTAPI_AVAILABLE = False
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from server.creature.accounts import AccountStore
 
