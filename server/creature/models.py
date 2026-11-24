@@ -27,14 +27,15 @@ class CreatureEvent:
     def create(cls, event_type: str, payload: dict[str, Any] | None = None) -> "CreatureEvent":
         if not isinstance(event_type, str) or not event_type.strip() or len(event_type) > 100:
             raise ValueError("event_type must be a non-empty string of at most 100 characters")
-        data = payload or {}
+        data = {} if payload is None else payload
         if not isinstance(data, dict):
             raise ValueError("payload must be a dictionary")
-        # Ensure the event is JSON-safe before it reaches persistent storage.
-        json.dumps(data, ensure_ascii=False, allow_nan=False)
+        # Copy and validate before the event reaches persistent storage.
+        snapshot = dict(data)
+        json.dumps(snapshot, ensure_ascii=False, allow_nan=False)
         return cls(
             event_type=event_type,
-            payload=data,
+            payload=snapshot,
             created_at=datetime.now(timezone.utc).isoformat(),
         )
 
@@ -56,7 +57,7 @@ class CreatureMemory:
         confidence: float = 0.5,
     ) -> "CreatureMemory":
         allowed = {"episodic", "semantic", "procedural", "experimental"}
-        if memory_type not in allowed:
+        if not isinstance(memory_type, str) or memory_type not in allowed:
             raise ValueError("unsupported memory_type")
         if not isinstance(content, str) or not content.strip() or len(content) > 100_000:
             raise ValueError("content must contain 1-100000 characters")
