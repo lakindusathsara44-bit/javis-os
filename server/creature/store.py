@@ -70,7 +70,6 @@ CREATE TABLE IF NOT EXISTS creature_knowledge_reviews (
     reviewer TEXT NOT NULL,
     rationale TEXT NOT NULL,
     reviewed_at TEXT NOT NULL,
-    UNIQUE(research_id, finding_id)
 );
 CREATE INDEX IF NOT EXISTS idx_creature_reviews_research ON creature_knowledge_reviews(research_id, id);
 """
