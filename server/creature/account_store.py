@@ -6,6 +6,7 @@ TLS, rate limits and a trusted one-time owner bootstrap procedure.
 """
 from __future__ import annotations
 
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 import hashlib
@@ -14,7 +15,7 @@ import re
 import secrets
 import sqlite3
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 from uuid import uuid4
 
 
@@ -293,12 +294,20 @@ class AccountStore:
             )
             return cursor.rowcount
 
-    def _connect(self) -> sqlite3.Connection:
-        db = sqlite3.connect(str(self._path), timeout=5, isolation_level=None)
+    @contextmanager
+    def _connect(self) -> Iterator[sqlite3.Connection]:
+        db = sqlite3.connect(str(self._path), timeout=5)
         db.row_factory = sqlite3.Row
         db.execute("PRAGMA foreign_keys=ON")
         db.execute("PRAGMA busy_timeout=5000")
-        return db
+        try:
+            yield db
+            db.commit()
+        except Exception:
+            db.rollback()
+            raise
+        finally:
+            db.close()
 
     @staticmethod
     def _email(value: str) -> str:
