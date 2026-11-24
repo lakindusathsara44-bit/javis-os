@@ -192,3 +192,8 @@ All state-changing endpoints require host authentication, authorization, CSRF pr
 6. Deployment, security and recovery testing.
 
 Foundation is accepted only when tests cover identity validation, allowed/forbidden lifecycle transitions, default-deny permissions, persistence round trips and package import without side effects.
+
+
+## Private account foundation
+
+The invitation-only account store is a WEB CREATURE-owned SQLite component. It supports one-time trusted owner bootstrap, owner-managed invitations, atomic invitation consumption, scrypt password hashes, opaque hashed session tokens, expiry and revocation. It does not expose HTTP endpoints or perform public owner setup. The future web host must add TLS, secure cookies, CSRF protection, rate limiting, email delivery/verification if used, session rotation, backups and per-user authorization on every data access. No public self-registration is allowed.
