@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 import hashlib
 import ipaddress
+import re
 from pathlib import Path
 from typing import Mapping
 from urllib.parse import urlsplit, urlunsplit
@@ -107,6 +108,17 @@ class WebObservationPolicy:
             if "/" in value or ":" in value or "@" in value:
                 raise ValueError("allowlist entries must be bare DNS hostnames")
             try:
+                value = value.encode("idna").decode("ascii")
+            except UnicodeError:
+                raise ValueError("allowlist entry is not a valid IDNA hostname") from None
+            labels = value.split(".")
+            if any(
+                not label or len(label) > 63
+                or not re.fullmatch(r"[a-z0-9](?:[a-z0-9-]*[a-z0-9])?", label)
+                for label in labels
+            ):
+                raise ValueError("allowlist entry is not a valid DNS hostname")
+            try:
                 ipaddress.ip_address(value)
             except ValueError:
                 pass
@@ -136,6 +148,17 @@ class WebObservationPolicy:
         host = (parsed.hostname or "").lower().rstrip(".")
         if not host:
             raise ValueError("URL must contain a hostname")
+        try:
+            host = host.encode("idna").decode("ascii")
+        except UnicodeError:
+            raise ValueError("URL hostname is not valid IDNA") from None
+        labels = host.split(".")
+        if any(
+            not label or len(label) > 63
+            or not re.fullmatch(r"[a-z0-9](?:[a-z0-9-]*[a-z0-9])?", label)
+            for label in labels
+        ):
+            raise ValueError("URL hostname is not a valid DNS name")
         try:
             ipaddress.ip_address(host)
         except ValueError:
