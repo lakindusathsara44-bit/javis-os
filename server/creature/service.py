@@ -21,9 +21,15 @@ class CreatureService:
         store: CreatureStore,
         policy: CapabilityPolicy | None = None,
     ) -> None:
+        if not isinstance(identity, CreatureIdentity):
+            raise TypeError("identity must be a CreatureIdentity")
+        if not isinstance(store, CreatureStore):
+            raise TypeError("store must be a CreatureStore")
         self.identity = identity
         self.store = store
-        self.policy = policy or CapabilityPolicy()
+        self.policy = policy if policy is not None else CapabilityPolicy()
+        if not isinstance(self.policy, CapabilityPolicy):
+            raise TypeError("policy must be a CapabilityPolicy")
         self.lifecycle = CreatureLifecycle()
 
     @property
@@ -33,10 +39,14 @@ class CreatureService:
     def initialize(self) -> None:
         self.store.initialize()
         self.lifecycle.transition(CreatureState.INITIALIZING)
-        self.store.append_event(CreatureEvent.create(
-            "creature.initialized",
-            {"creature_id": self.identity.creature_id, "schema_version": self.identity.schema_version},
-        ))
+        try:
+            self.store.append_event(CreatureEvent.create(
+                "creature.initialized",
+                {"creature_id": self.identity.creature_id, "schema_version": self.identity.schema_version},
+            ))
+        except Exception:
+            self.lifecycle.fail()
+            raise
         self.lifecycle.transition(CreatureState.ACTIVE)
 
     def pause(self) -> None:
