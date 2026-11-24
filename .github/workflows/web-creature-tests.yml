@@ -1,0 +1,32 @@
+name: WEB CREATURE tests
+
+on:
+  pull_request:
+    paths:
+      - "server/creature/**"
+      - "tests/python/test_web_creature*.py"
+      - ".github/workflows/web-creature-tests.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "server/creature/**"
+      - "tests/python/test_web_creature*.py"
+      - ".github/workflows/web-creature-tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run WEB CREATURE unit tests
+        run: python -m unittest discover -s tests/python -p "test_web_creature*.py" -v
