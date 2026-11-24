@@ -138,7 +138,7 @@ class PrivateAuthHttpTests(unittest.TestCase):
         )
         self.assertEqual(missing_custom_header.status_code, 403)
 
-    def test_rate_limiter_is_called_and_failure_fails_closed(self) -> None:
+    def test_rate_limiter_is_called(self) -> None:
         response = self.client.post(
             "/api/creature/auth/login",
             headers=self.headers,
@@ -146,6 +146,30 @@ class PrivateAuthHttpTests(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertIn(("login", "owner@example.test"), self.rate_events)
+
+    def test_rate_limiter_failure_fails_closed(self) -> None:
+        from fastapi import HTTPException
+
+        def unavailable_limiter(request, action, subject):
+            raise RuntimeError("rate limiter offline")
+
+        app = FastAPI()
+        app.include_router(
+            create_auth_router(
+                self.store,
+                trusted_origins={"http://localhost"},
+                rate_limiter=unavailable_limiter,
+                cookie_secure=False,
+            )
+        )
+        client = TestClient(app, base_url="http://localhost")
+        response = client.post(
+            "/api/creature/auth/login",
+            headers=self.headers,
+            json={"email": "owner@example.test", "password": "a-long-owner-password-123"},
+        )
+        self.assertEqual(response.status_code, 503)
+        client.close()
 
     def test_production_cookie_mode_rejects_http_origin(self) -> None:
         with self.assertRaises(ValueError):
