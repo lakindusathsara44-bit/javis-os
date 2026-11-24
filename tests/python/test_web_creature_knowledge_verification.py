@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from server.creature import (
     CapabilityPolicy, CreatureGoal, CreatureIdentity, CreatureService, CreatureStore,
     EvidenceLevel, ResearchEngine, ResearchReport, ResearchVerifier, ReviewDecision,
-    SearchResult, SourceEvidence, WebObservationPolicy,
+    SearchResult, SourceEvidence, TransportResponse, WebObservationPolicy,
 )
 
 
@@ -35,6 +35,14 @@ def sample_report() -> ResearchReport:
 class DummyTransport:
     def fetch(self, url: str, *, timeout_seconds: float, max_bytes: int):
         raise AssertionError("discover must not fetch source content")
+
+
+class StaticTransport:
+    def __init__(self, response):
+        self.response = response
+
+    def fetch(self, url: str, *, timeout_seconds: float, max_bytes: int):
+        return self.response
 
 
 class FakeSearchProvider:
@@ -75,6 +83,32 @@ class SearchProviderTests(unittest.TestCase):
         engine = ResearchEngine(WebObservationPolicy(frozenset({"example.org"})), transport=DummyTransport())
         with self.assertRaises(RuntimeError):
             engine.discover("Find sources")
+
+
+class GoalResearchTests(unittest.TestCase):
+    def test_active_goal_can_run_explicit_search_and_persist_report(self) -> None:
+        url = "https://docs.example.org/policy"
+        body = b"This policy statement is long enough to be extracted as a research sentence and retained as evidence."
+        engine = ResearchEngine(
+            WebObservationPolicy(frozenset({"example.org"}), max_sources=2),
+            transport=StaticTransport(TransportResponse(
+                status_code=200, final_url=url, headers={"Content-Type": "text/plain"}, body=body,
+            )),
+            search_provider=FakeSearchProvider([SearchResult("Policy", url, "untrusted snippet")]),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            service = CreatureService(
+                CreatureIdentity("web-creature-001"),
+                CreatureStore(Path(directory) / "creature.sqlite3"),
+                CapabilityPolicy(frozenset({"goal.write", "goal.execute", "web.search", "web.read", "research.persist"})),
+                research_engine=engine,
+            )
+            service.initialize()
+            goal_id = service.create_goal(CreatureGoal.create("Research policy", priority=1))
+            service.transition_goal(goal_id, __import__("server.creature").creature.GoalStatus.ACTIVE)
+            research_id, report = service.research_goal_from_search(goal_id, "Find the policy")
+            self.assertEqual(len(report.sources), 1)
+            self.assertIsNotNone(service.store.get_research_report(research_id))
 
 
 class ResearchVerifierTests(unittest.TestCase):
