@@ -8,15 +8,17 @@ from pathlib import Path
 try:
     from fastapi import FastAPI
     from fastapi.testclient import TestClient
+    from server.creature.http import create_auth_router
+    FASTAPI_AVAILABLE = True
 except ModuleNotFoundError:
-    raise unittest.SkipTest("FastAPI is installed in the full application CI, not the stdlib-only focused job")
+    FASTAPI_AVAILABLE = False
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from server.creature.accounts import AccountStore
-from server.creature.http import create_auth_router
 
 
+@unittest.skipUnless(FASTAPI_AVAILABLE, "FastAPI is installed in the full application CI, not the stdlib-only focused job")
 class PrivateAuthHttpTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temp = tempfile.TemporaryDirectory()
