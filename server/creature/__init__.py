@@ -4,6 +4,7 @@ Importing this package is intentionally side-effect free. The trusted host
 must explicitly construct and initialize a CreatureService.
 """
 from .identity import CreatureIdentity
+from .accounts import Account, AccountStore, AuthenticatedSession, IssuedInvitation, PasswordHasher, normalize_email
 from .access import Invitation
 from .companion import (
     ActionClass, ActionProposal, ConversationMessage, ConversationSession,
@@ -20,6 +21,12 @@ from .store import CreatureStore
 from .verification import EvidenceFinding, EvidenceLevel, KnowledgeReview, ResearchVerifier, ReviewDecision
 
 __all__ = [
+    "Account",
+    "AccountStore",
+    "AuthenticatedSession",
+    "IssuedInvitation",
+    "PasswordHasher",
+    "normalize_email",
     "ActionClass",
     "ActionProposal",
     "ConversationMessage",
