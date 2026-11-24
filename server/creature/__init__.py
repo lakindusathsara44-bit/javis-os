@@ -1,4 +1,4 @@
-"""WEB CREATURE subsystem for APOLONIA ALPHA.
+"""Independent WEB CREATURE domain subsystem.
 
 Importing this package is intentionally side-effect free. The trusted host
 must explicitly construct and initialize a CreatureService.
