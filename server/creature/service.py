@@ -154,6 +154,27 @@ class CreatureService:
         )
         return research_id, report
 
+    def research_from_search(self, question: str) -> tuple[int, ResearchReport]:
+        """Discover URLs through the host provider, then persist bounded source evidence."""
+        self.policy.require("web.search")
+        if self.research_engine is None:
+            raise RuntimeError("no host-approved research engine is configured")
+        plan = self.research_engine.discover(question)
+        return self.research_and_store(plan)
+
+    def research_goal_from_search(self, goal_id: int, question: str) -> tuple[int, ResearchReport]:
+        self.policy.require("goal.execute")
+        if self.status != CreatureState.ACTIVE:
+            raise RuntimeError("creature must be active to execute a goal")
+        goal = self.store.get_goal(goal_id)
+        if goal is None:
+            raise KeyError(f"goal not found: {goal_id}")
+        if goal["status"] != GoalStatus.ACTIVE.value:
+            raise RuntimeError("goal must be active before research execution")
+        research_id, report = self.research_from_search(question)
+        self._audit("goal.research.discovered", goal_id=goal_id, research_id=research_id)
+        return research_id, report
+
     def research_goal(self, goal_id: int, plan: ResearchPlan) -> tuple[int, ResearchReport]:
         """Execute one explicitly requested research action for an already-active goal."""
         self.policy.require("goal.execute")
