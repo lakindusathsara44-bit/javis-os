@@ -43,8 +43,8 @@ Internet content is untrusted input. Instructions found in pages, files, issues,
 | `models.py` | Lifecycle states and immutable event/memory records |
 | `permissions.py` | Deny-by-default capability policy |
 | `lifecycle.py` | Explicit, validated state transitions |
-| `store.py` | Local SQLite persistence and schema initialization |
-| `service.py` | Small application facade; policy-gated operations |
+| `store.py` | Local SQLite persistence, schema initialization and aggregate dashboard metrics |
+| `service.py` | Small application facade; policy-gated operations and read-only dashboard access |
 | `observation.py` | Explicit-root local reads and allowlisted HTTPS destination policy |
 | `research.py` | Injected search provider and transport, source provenance, bounded extraction and cross-source comparison |
 | `verification.py` | Deterministic evidence classification and explicit human knowledge review |
@@ -52,6 +52,7 @@ Internet content is untrusted input. Instructions found in pages, files, issues,
 | Future `skills.py` | Versioned skill registry and validation |
 | Future `evolution.py` | Candidate generation and evaluation orchestration |
 | Future `sandbox.py` | Isolated execution with strict resource limits |
+| `dashboard.py` | Privacy-minimized read model for owner-authorized operational status |
 | Future `api.py` | Authenticated host API routes; explicit registration only |
 
 ## 5. Identity and lifecycle
@@ -174,12 +175,19 @@ All state-changing endpoints require host authentication, authorization, CSRF pr
 - a host-injected SearchProvider contract can return bounded candidate URLs; each URL is revalidated against the same allowlist before it enters a ResearchPlan; provider snippets and titles remain untrusted metadata;
 - no semantic contradiction detection, source reputation scoring, automatic truth claims, or concrete live search-provider adapter is included.
 
+### Alpha 0.5 — Dashboard read model
+- expose an explicit dashboard.read capability for a read-only operational snapshot;
+- report identity, lifecycle state, aggregate event/memory/research/review counts, goal-state counts and latest event metadata;
+- never expose memory text, research excerpts, review rationale, event payloads or secrets in the dashboard snapshot;
+- support paused/stopped/error visibility without requiring the Creature to be active;
+- do not mount HTTP routes or create a web server as a package import side effect.
+
 ### Remaining phases
-1. Host integration and a trusted search-provider/transport adapter.
-2. Bounded scheduler and approval-aware goal execution.
-3. Skill registry, sandbox and evaluation.
-4. Git proposal/PR workflow.
-5. Authenticated API and dashboard.
+1. Authenticated host API routes and dashboard UI, mounted explicitly by APOLONIA.
+2. Trusted search-provider/transport adapters with DNS pinning, egress policy and quotas.
+3. Bounded scheduler and approval-aware goal execution.
+4. Skill registry, sandbox and evaluation.
+5. Git proposal/PR workflow.
 6. Deployment, security and recovery testing.
 
 Foundation is accepted only when tests cover identity validation, allowed/forbidden lifecycle transitions, default-deny permissions, persistence round trips and package import without side effects.
