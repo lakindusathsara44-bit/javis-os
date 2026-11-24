@@ -8,7 +8,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from server.creature import (
-    CapabilityPolicy, CreatureGoal, CreatureIdentity, CreatureService, CreatureStore,
+    CapabilityPolicy, CreatureGoal, CreatureIdentity, CreatureService, CreatureStore, GoalStatus,
     EvidenceLevel, ResearchEngine, ResearchReport, ResearchVerifier, ReviewDecision,
     SearchResult, SourceEvidence, TransportResponse, WebObservationPolicy,
 )
@@ -105,7 +105,7 @@ class GoalResearchTests(unittest.TestCase):
             )
             service.initialize()
             goal_id = service.create_goal(CreatureGoal.create("Research policy", priority=1))
-            service.transition_goal(goal_id, __import__("server.creature").creature.GoalStatus.ACTIVE)
+            service.transition_goal(goal_id, GoalStatus.ACTIVE)
             research_id, report = service.research_goal_from_search(goal_id, "Find the policy")
             self.assertEqual(len(report.sources), 1)
             self.assertIsNotNone(service.store.get_research_report(research_id))
