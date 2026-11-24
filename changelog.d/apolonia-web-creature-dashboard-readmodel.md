@@ -9,6 +9,10 @@ title: WEB CREATURE privacy-safe dashboard read model
 - **Quyền riêng biệt.** Việc đọc dashboard yêu cầu capability `dashboard.read`; mặc định bị từ chối.
 - **Không tự động tích hợp web.** Không tạo route HTTP, server hoặc background task khi import package.
 
+### Bảo mật
+- Snapshot chỉ đọc, không làm thay đổi trạng thái Creature hoặc ghi thêm audit event.
+- Trạng thái tạm dừng, đã dừng và lỗi vẫn hiển thị; không nới lỏng điều kiện cho thao tác ghi.
+
 ## en
 ### Added
 - **Read-only dashboard snapshot.** Exposes identity, lifecycle state, aggregate event/memory/research/review counts, goal-state counts and latest event metadata.
