@@ -15,6 +15,7 @@ from typing import Protocol
 from .observation import TransportResponse, WebObservationPolicy
 
 
+@dataclass(frozen=True, slots=True)
 class SearchResult:
     """Untrusted search metadata; only its URL is used to build a bounded plan."""
     title: str
