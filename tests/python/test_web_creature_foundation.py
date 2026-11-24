@@ -22,7 +22,7 @@ class CreatureIdentityTests(unittest.TestCase):
     def test_valid_identity(self) -> None:
         identity = CreatureIdentity("web-creature-001")
         self.assertEqual(identity.name, "WEB CREATURE")
-        self.assertEqual(identity.platform, "APOLONIA ALPHA")
+        self.assertEqual(identity.platform, "INDEPENDENT WEB CREATURE")
 
     def test_invalid_identity_rejected(self) -> None:
         for value in ("", "../bad", "UPPERCASE", "ab", "has spaces"):
