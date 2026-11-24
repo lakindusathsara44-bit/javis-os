@@ -207,13 +207,12 @@ class CreatureService:
         if self.status != CreatureState.ACTIVE:
             raise RuntimeError("creature must be active to promote knowledge")
         reviews = self.store.list_knowledge_reviews(research_id)
-        approved = next(
-            (item for item in reversed(reviews)
-             if item["finding_id"] == finding_id and item["decision"] == ReviewDecision.VERIFIED.value),
+        latest_review = next(
+            (item for item in reversed(reviews) if item["finding_id"] == finding_id),
             None,
         )
-        if approved is None:
-            raise PermissionError("finding has no explicit verified review")
+        if latest_review is None or latest_review["decision"] != ReviewDecision.VERIFIED.value:
+            raise PermissionError("finding has no current explicit verified review")
         finding = next(
             (item for item in self.verifier.evaluate(self._load_research_report(research_id))
              if item.finding_id == finding_id),
