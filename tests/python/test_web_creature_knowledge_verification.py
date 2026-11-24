@@ -66,7 +66,7 @@ class SearchProviderTests(unittest.TestCase):
         ])
         engine = ResearchEngine(
             WebObservationPolicy(frozenset({"example.org"})),
-            transport=object(), search_provider=provider,
+            transport=DummyTransport(), search_provider=provider,
         )
         with self.assertRaises(PermissionError):
             engine.discover("Find sources")
