@@ -41,6 +41,17 @@ class ResearchVerifierTests(unittest.TestCase):
         self.assertEqual(len(shared.source_hashes), 2)
         self.assertEqual(len(unique.source_hashes), 1)
 
+    def test_single_source_shared_statement_is_not_corroborated(self) -> None:
+        report = sample_report()
+        one_source = ResearchReport(
+            question=report.question, sources=(report.sources[0],),
+            shared_statements=(report.shared_statements[0],),
+            unique_statements=(), generated_at=report.generated_at,
+        )
+        finding = ResearchVerifier().evaluate(one_source)[0]
+        self.assertEqual(finding.evidence_level, EvidenceLevel.SINGLE_SOURCE)
+        self.assertFalse(finding.verified)
+
     def test_review_requires_reviewer_and_rationale(self) -> None:
         finding = ResearchVerifier().evaluate(sample_report())[0]
         verifier = ResearchVerifier()
@@ -106,6 +117,28 @@ class KnowledgePromotionTests(unittest.TestCase):
             memories = service.store.list_memory(verification_status="verified")
             self.assertEqual(len(memories), 1)
             self.assertEqual(memories[0]["source_kind"], "web")
+
+    def test_latest_rejection_blocks_memory_promotion(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            grants = frozenset({"memory.write", "knowledge.verify", "knowledge.promote"})
+            service = CreatureService(
+                CreatureIdentity("web-creature-001"),
+                CreatureStore(Path(directory) / "creature.sqlite3"),
+                CapabilityPolicy(grants),
+            )
+            service.initialize()
+            research_id = service.store.save_research_report(sample_report())
+            finding = service.evaluate_research(research_id)[0]
+            service.review_knowledge_claim(
+                research_id, finding.finding_id, ReviewDecision.VERIFIED,
+                reviewer="owner", rationale="Initial review.",
+            )
+            service.review_knowledge_claim(
+                research_id, finding.finding_id, ReviewDecision.REJECTED,
+                reviewer="owner", rationale="Later review found a material issue.",
+            )
+            with self.assertRaises(PermissionError):
+                service.promote_verified_claim_to_memory(research_id, finding.finding_id)
 
 
 if __name__ == "__main__":
