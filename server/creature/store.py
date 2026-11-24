@@ -253,6 +253,34 @@ class CreatureStore:
             updated = connection.execute("SELECT * FROM creature_goals WHERE id = ?", (goal_id,)).fetchone()
         return dict(updated)
 
+    def dashboard_summary(self) -> dict[str, Any]:
+        """Return aggregate counts and the latest event metadata, never content."""
+        with closing(self._connect()) as connection, connection:
+            connection.execute("BEGIN")
+            event_count = int(connection.execute("SELECT COUNT(*) FROM creature_events").fetchone()[0])
+            memory_count = int(connection.execute("SELECT COUNT(*) FROM creature_memory").fetchone()[0])
+            research_count = int(connection.execute("SELECT COUNT(*) FROM creature_research_runs").fetchone()[0])
+            review_count = int(connection.execute("SELECT COUNT(*) FROM creature_knowledge_reviews").fetchone()[0])
+            goal_rows = connection.execute(
+                "SELECT status, COUNT(*) AS amount FROM creature_goals GROUP BY status"
+            ).fetchall()
+            latest = connection.execute(
+                "SELECT event_type, created_at FROM creature_events ORDER BY id DESC LIMIT 1"
+            ).fetchone()
+        goal_counts = {status.value: 0 for status in GoalStatus}
+        for row in goal_rows:
+            if row["status"] in goal_counts:
+                goal_counts[row["status"]] = int(row["amount"])
+        return {
+            "event_count": event_count,
+            "memory_count": memory_count,
+            "research_count": research_count,
+            "review_count": review_count,
+            "goal_counts": goal_counts,
+            "latest_event_type": latest["event_type"] if latest else None,
+            "latest_event_at": latest["created_at"] if latest else None,
+        }
+
     def save_research_report(self, report: Any) -> int:
         """Persist a provenance-bearing report without promoting findings to memory."""
         from dataclasses import asdict, is_dataclass

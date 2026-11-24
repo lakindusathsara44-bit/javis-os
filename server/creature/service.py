@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from .identity import CreatureIdentity
+from .dashboard import DashboardSnapshot, build_dashboard_snapshot
 from .lifecycle import CreatureLifecycle
 from .models import CreatureEvent, CreatureGoal, CreatureMemory, CreatureState, GoalStatus
 from .permissions import CapabilityPolicy
@@ -40,6 +41,12 @@ class CreatureService:
         self.research_engine = research_engine
         self.lifecycle = CreatureLifecycle()
         self.verifier = ResearchVerifier()
+
+    def dashboard_snapshot(self) -> DashboardSnapshot:
+        """Return an owner-authorized, content-free operational status snapshot."""
+        self.policy.require("dashboard.read")
+        summary = self.store.dashboard_summary()
+        return build_dashboard_snapshot(self.identity, self.status, summary)
 
     @property
     def status(self) -> CreatureState:
