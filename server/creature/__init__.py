@@ -5,6 +5,7 @@ must explicitly construct and initialize a CreatureService.
 """
 from .identity import CreatureIdentity
 from .access import Invitation
+from .account_store import Account, AccountStore, IssuedInvitation
 from .companion import (
     ActionClass, ActionProposal, ConversationMessage, ConversationSession,
     InitiativeSettings, MessageRole, ProposalStatus, SessionStatus,
@@ -20,6 +21,9 @@ from .store import CreatureStore
 from .verification import EvidenceFinding, EvidenceLevel, KnowledgeReview, ResearchVerifier, ReviewDecision
 
 __all__ = [
+    "Account",
+    "AccountStore",
+    "IssuedInvitation",
     "ActionClass",
     "ActionProposal",
     "ConversationMessage",
