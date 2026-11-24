@@ -20,7 +20,8 @@ title: WEB CREATURE knowledge verification and goal-driven research
 - **Evidence classification is not factual verification.** Exact statements shared across sources are labelled corroborated; source-unique statements are labelled single-source.
 - **Verification requires an explicit human review.** Reviewer, decision, rationale and timestamp are recorded; web content is never auto-promoted to verified knowledge.
 - **Knowledge promotion is a separate operation.** It requires independent verification, promotion and memory-write capabilities.
-- **Goal-driven research is manually invoked.** The target goal must already be active and the host must grant the required capabilities.\n- **Search uses a host-injected provider contract.** Returned URLs are bounded and checked against the configured HTTPS allowlist before fetching.
+- **Goal-driven research is manually invoked.** The target goal must already be active and the host must grant the required capabilities.
+- **Search uses a host-injected provider contract.** Returned URLs are bounded and checked against the configured HTTPS allowlist before fetching.
 
 ### Security
 - **No concrete live search provider or autonomous scheduler is bundled.** Search and network transport remain host-injected.
