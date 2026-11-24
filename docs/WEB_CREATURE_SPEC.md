@@ -171,7 +171,8 @@ All state-changing endpoints require host authentication, authorization, CSRF pr
 - store reviewer identity, decision, rationale and timestamp, and reject reviews for findings not present in the stored report;
 - require separate knowledge.verify, knowledge.promote and memory.write capabilities; promotion to semantic memory is a separate explicit operation after verification;
 - permit a manually invoked research action for an already-active goal, requiring goal.execute, web.read and research.persist; no scheduler or autonomous background execution is added;
-- a host-injected SearchProvider contract can return bounded candidate URLs; each URL is revalidated against the same allowlist before it enters a ResearchPlan; provider snippets and titles remain untrusted metadata;\n- no semantic contradiction detection, source reputation scoring, automatic truth claims, or concrete live search-provider adapter is included.
+- a host-injected SearchProvider contract can return bounded candidate URLs; each URL is revalidated against the same allowlist before it enters a ResearchPlan; provider snippets and titles remain untrusted metadata;
+- no semantic contradiction detection, source reputation scoring, automatic truth claims, or concrete live search-provider adapter is included.
 
 ### Remaining phases
 1. Host integration and a trusted search-provider/transport adapter.
