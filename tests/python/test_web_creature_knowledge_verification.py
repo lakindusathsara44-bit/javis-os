@@ -177,7 +177,7 @@ class ResearchPersistenceTests(unittest.TestCase):
 class KnowledgePromotionTests(unittest.TestCase):
     def test_memory_promotion_requires_review_and_separate_capabilities(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            grants = frozenset({"memory.write", "knowledge.verify", "knowledge.promote"})
+            grants = frozenset({"memory.write", "knowledge.verify", "knowledge.promote", "research.read"})
             service = CreatureService(
                 CreatureIdentity("web-creature-001"),
                 CreatureStore(Path(directory) / "creature.sqlite3"),
