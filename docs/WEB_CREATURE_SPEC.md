@@ -4,7 +4,8 @@
 **Component:** WEB CREATURE  
 **Specification:** 1.0 (foundation draft)  
 **Status:** Proposed; implementation is incremental  
-**Environment:** Hybrid (local + permitted internet resources)  
+**Environment:** Online website + paired Windows Desktop Agent  
+**Access:** Private, invitation-only  
 **Identity:** Independent project and identity  
 **Evolution:** Combined (automatic skill-level changes; reviewed code changes)
 
@@ -18,10 +19,10 @@ Initial implementation is deliberately passive: importing the package performs n
 
 ## 2. Architectural boundaries
 
-- **APOLONIA ALPHA:** trusted host; owns authentication, authorization, secrets, resource limits, deployment and emergency stop.
-- **WEB CREATURE:** independent domain subsystem; owns its identity, goals, internal memory, knowledge provenance, experiments and skill metadata.
-- **APOLONIA AI:** conversational interface and collaborator. It calls Creature APIs through authenticated, scoped interfaces; it does not share unrestricted memory or credentials.
-- **Existing JARVIS OS facilities:** candidate infrastructure to reuse after code-level review (model router, MCP Hub, learning/promotion, improvement experiments and sandbox). No existing privileged mode is automatically inherited.
+- **WEB CREATURE host:** separately configured trusted runtime; owns authentication, authorization, secrets, resource limits, deployment and emergency stop.
+- **WEB CREATURE:** standalone product and domain; owns its identity, goals, internal memory, knowledge provenance, experiments and skill metadata.
+- **ApoloniaAI and Apokolips:** separate projects. No shared identity, codebase, memory, credentials, permissions, hosting or deployment is assumed.
+- **Future interoperability:** only through an optional, owner-approved, authenticated and narrowly scoped bridge. No system inherits another system's privileges.
 
 The Creature package must not import the FastAPI application or create a circular dependency. Host integrations are injected through narrow interfaces.
 
