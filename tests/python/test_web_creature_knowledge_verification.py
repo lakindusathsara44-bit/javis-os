@@ -32,6 +32,11 @@ def sample_report() -> ResearchReport:
     )
 
 
+class DummyTransport:
+    def fetch(self, url: str, *, timeout_seconds: float, max_bytes: int):
+        raise AssertionError("discover must not fetch source content")
+
+
 class FakeSearchProvider:
     def __init__(self, results):
         self.results = results
@@ -49,7 +54,7 @@ class SearchProviderTests(unittest.TestCase):
         ])
         engine = ResearchEngine(
             WebObservationPolicy(frozenset({"example.org"}), max_sources=2),
-            transport=object(), search_provider=provider,
+            transport=DummyTransport(), search_provider=provider,
         )
         plan = engine.discover("How does the policy work?")
         self.assertEqual(plan.source_urls, ("https://docs.example.org/guide",))
@@ -67,7 +72,7 @@ class SearchProviderTests(unittest.TestCase):
             engine.discover("Find sources")
 
     def test_search_is_not_available_without_host_provider(self) -> None:
-        engine = ResearchEngine(WebObservationPolicy(frozenset({"example.org"})), transport=object())
+        engine = ResearchEngine(WebObservationPolicy(frozenset({"example.org"})), transport=DummyTransport())
         with self.assertRaises(RuntimeError):
             engine.discover("Find sources")
 
