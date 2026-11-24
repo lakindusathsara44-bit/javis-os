@@ -11,6 +11,7 @@ from .research import ResearchEngine, ResearchPlan, ResearchReport, SourceEviden
 from .permissions import CapabilityPolicy
 from .service import CreatureService
 from .store import CreatureStore
+from .verification import EvidenceFinding, EvidenceLevel, KnowledgeReview, ResearchVerifier, ReviewDecision
 
 __all__ = [
     "CapabilityPolicy",
@@ -21,6 +22,11 @@ __all__ = [
     "CreatureService",
     "CreatureState",
     "CreatureStore",
+    "EvidenceFinding",
+    "EvidenceLevel",
+    "KnowledgeReview",
+    "ResearchVerifier",
+    "ReviewDecision",
     "GoalStatus",
     "LocalFileObserver",
     "LocalFilePolicy",
