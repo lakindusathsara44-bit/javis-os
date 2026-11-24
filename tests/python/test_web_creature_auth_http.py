@@ -55,8 +55,8 @@ class PrivateAuthHttpTests(unittest.TestCase):
         self.assertEqual(response.json()["account"]["role"], "owner")
         self.assertNotIn("token", response.json())
         cookie = response.headers.get("set-cookie", "")
-        self.assertIn("HttpOnly", cookie)
-        self.assertIn("SameSite=strict", cookie)
+        self.assertIn("httponly", cookie.casefold())
+        self.assertIn("samesite=strict", cookie.casefold())
 
         me = self.client.get("/api/creature/auth/me")
         self.assertEqual(me.status_code, 200)
@@ -148,8 +148,6 @@ class PrivateAuthHttpTests(unittest.TestCase):
         self.assertIn(("login", "owner@example.test"), self.rate_events)
 
     def test_rate_limiter_failure_fails_closed(self) -> None:
-        from fastapi import HTTPException
-
         def unavailable_limiter(request, action, subject):
             raise RuntimeError("rate limiter offline")
 
