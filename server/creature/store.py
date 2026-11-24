@@ -255,7 +255,6 @@ class CreatureStore:
 
     def dashboard_summary(self) -> dict[str, Any]:
         """Return aggregate counts and the latest event metadata, never content."""
-        from datetime import datetime
         with closing(self._connect()) as connection, connection:
             connection.execute("BEGIN")
             event_count = int(connection.execute("SELECT COUNT(*) FROM creature_events").fetchone()[0])
