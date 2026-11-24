@@ -7,10 +7,11 @@ from .identity import CreatureIdentity
 from .lifecycle import CreatureLifecycle, CreatureState
 from .models import CreatureGoal, CreatureMemory, GoalStatus
 from .observation import LocalFileObserver, LocalFilePolicy, LocalObservation, TransportResponse, WebObservationPolicy
-from .research import ResearchEngine, ResearchPlan, ResearchReport, SourceEvidence, WebTransport
+from .research import ResearchEngine, ResearchPlan, ResearchReport, SearchProvider, SearchResult, SourceEvidence, WebTransport
 from .permissions import CapabilityPolicy
 from .service import CreatureService
 from .store import CreatureStore
+from .verification import EvidenceFinding, EvidenceLevel, KnowledgeReview, ResearchVerifier, ReviewDecision
 
 __all__ = [
     "CapabilityPolicy",
@@ -21,6 +22,11 @@ __all__ = [
     "CreatureService",
     "CreatureState",
     "CreatureStore",
+    "EvidenceFinding",
+    "EvidenceLevel",
+    "KnowledgeReview",
+    "ResearchVerifier",
+    "ReviewDecision",
     "GoalStatus",
     "LocalFileObserver",
     "LocalFilePolicy",
@@ -28,6 +34,8 @@ __all__ = [
     "ResearchEngine",
     "ResearchPlan",
     "ResearchReport",
+    "SearchProvider",
+    "SearchResult",
     "SourceEvidence",
     "TransportResponse",
     "WebObservationPolicy",

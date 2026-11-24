@@ -53,6 +53,25 @@ CREATE TABLE IF NOT EXISTS creature_goals (
     updated_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_creature_goals_status_priority ON creature_goals(status, priority, id);
+CREATE TABLE IF NOT EXISTS creature_research_runs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    question TEXT NOT NULL,
+    report_json TEXT NOT NULL,
+    report_hash TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_creature_research_created ON creature_research_runs(created_at DESC);
+CREATE TABLE IF NOT EXISTS creature_knowledge_reviews (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    research_id INTEGER NOT NULL REFERENCES creature_research_runs(id) ON DELETE CASCADE,
+    finding_id TEXT NOT NULL,
+    finding_text TEXT NOT NULL,
+    decision TEXT NOT NULL CHECK(decision IN ('verified','rejected')),
+    reviewer TEXT NOT NULL,
+    rationale TEXT NOT NULL,
+    reviewed_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_creature_reviews_research ON creature_knowledge_reviews(research_id, id);
 """
 
 
@@ -233,6 +252,92 @@ class CreatureStore:
             )
             updated = connection.execute("SELECT * FROM creature_goals WHERE id = ?", (goal_id,)).fetchone()
         return dict(updated)
+
+    def save_research_report(self, report: Any) -> int:
+        """Persist a provenance-bearing report without promoting findings to memory."""
+        from dataclasses import asdict, is_dataclass
+        if not is_dataclass(report) or report.__class__.__name__ != "ResearchReport":
+            raise TypeError("report must be a ResearchReport")
+        payload = asdict(report)
+        encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True, allow_nan=False)
+        digest = hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+        with closing(self._connect()) as connection, connection:
+            cursor = connection.execute(
+                "INSERT INTO creature_research_runs(question, report_json, report_hash, created_at) VALUES (?, ?, ?, ?)",
+                (report.question, encoded, digest, report.generated_at),
+            )
+            return int(cursor.lastrowid)
+
+    def get_research_report(self, research_id: int) -> dict[str, Any] | None:
+        self._validate_goal_id(research_id)
+        with closing(self._connect()) as connection:
+            row = connection.execute(
+                "SELECT id, question, report_json, report_hash, created_at FROM creature_research_runs WHERE id = ?",
+                (research_id,),
+            ).fetchone()
+        if row is None:
+            return None
+        item = dict(row)
+        item["report"] = json.loads(item.pop("report_json"))
+        return item
+
+    def list_research_reports(self, limit: int = 100) -> list[dict[str, Any]]:
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 1000:
+            raise ValueError("limit must be an integer between 1 and 1000")
+        with closing(self._connect()) as connection:
+            rows = connection.execute(
+                "SELECT id, question, report_hash, created_at FROM creature_research_runs ORDER BY id DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def save_knowledge_review(self, research_id: int, review: Any) -> int:
+        from .verification import KnowledgeReview, ReviewDecision
+        if isinstance(research_id, bool) or not isinstance(research_id, int) or research_id < 1:
+            raise ValueError("research_id must be a positive integer")
+        if not isinstance(review, KnowledgeReview):
+            raise TypeError("review must be a KnowledgeReview")
+        if review.decision not in (ReviewDecision.VERIFIED, ReviewDecision.REJECTED):
+            raise ValueError("unsupported review decision")
+        report = self.get_research_report(research_id)
+        if report is None:
+            raise KeyError(f"research report not found: {research_id}")
+        # A review may only refer to a finding present in the stored report.
+        from .research import ResearchReport, SourceEvidence
+        from .verification import ResearchVerifier
+        raw = report["report"]
+        sources = tuple(SourceEvidence(**source) for source in raw["sources"])
+        reconstructed = ResearchReport(
+            question=raw["question"], sources=sources,
+            shared_statements=tuple(raw["shared_statements"]),
+            unique_statements=tuple((domain, tuple(items)) for domain, items in raw["unique_statements"]),
+            generated_at=raw["generated_at"],
+        )
+        valid_ids = {item.finding_id for item in ResearchVerifier().evaluate(reconstructed)}
+        if review.finding_id not in valid_ids:
+            raise ValueError("review finding does not belong to this research report")
+        finding = next(item for item in ResearchVerifier().evaluate(reconstructed) if item.finding_id == review.finding_id)
+        with closing(self._connect()) as connection, connection:
+            cursor = connection.execute(
+                """INSERT INTO creature_knowledge_reviews
+                   (research_id, finding_id, finding_text, decision, reviewer, rationale, reviewed_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                (research_id, review.finding_id, finding.statement, review.decision.value,
+                 review.reviewer, review.rationale, review.reviewed_at),
+            )
+            return int(cursor.lastrowid)
+
+    def list_knowledge_reviews(self, research_id: int) -> list[dict[str, Any]]:
+        if isinstance(research_id, bool) or not isinstance(research_id, int) or research_id < 1:
+            raise ValueError("research_id must be a positive integer")
+        with closing(self._connect()) as connection:
+            rows = connection.execute(
+                """SELECT id, research_id, finding_id, finding_text, decision, reviewer,
+                          rationale, reviewed_at
+                   FROM creature_knowledge_reviews WHERE research_id = ? ORDER BY id""",
+                (research_id,),
+            ).fetchall()
+        return [dict(row) for row in rows]
 
     @staticmethod
     def _validate_goal_id(goal_id: int) -> None:

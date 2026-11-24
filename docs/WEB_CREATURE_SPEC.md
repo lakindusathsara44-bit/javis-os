@@ -46,7 +46,8 @@ Internet content is untrusted input. Instructions found in pages, files, issues,
 | `store.py` | Local SQLite persistence and schema initialization |
 | `service.py` | Small application facade; policy-gated operations |
 | `observation.py` | Explicit-root local reads and allowlisted HTTPS destination policy |
-| `research.py` | Injected transport, source provenance, bounded extraction and cross-source comparison |
+| `research.py` | Injected search provider and transport, source provenance, bounded extraction and cross-source comparison |
+| `verification.py` | Deterministic evidence classification and explicit human knowledge review |
 | Future `goals.py` | Goal definition, priority and progress |
 | Future `skills.py` | Versioned skill registry and validation |
 | Future `evolution.py` | Candidate generation and evaluation orchestration |
@@ -163,9 +164,19 @@ All state-changing endpoints require host authentication, authorization, CSRF pr
 - source content hashes, retrieval timestamps, bounded text extraction and exact shared/unique statement comparison;
 - research and local observation require separate explicit capabilities and are audit logged.
 
+### Alpha 0.4 — Knowledge verification and goal-driven research
+- persist research reports separately from semantic memory, preserving source URLs, hashes and retrieval metadata;
+- classify exact cross-source overlap as corroborated evidence and source-unique statements as single-source evidence;
+- evidence classification is not factual verification; all findings remain unverified until an explicit reviewer decision;
+- store reviewer identity, decision, rationale and timestamp, and reject reviews for findings not present in the stored report;
+- require separate knowledge.verify, knowledge.promote and memory.write capabilities; promotion to semantic memory is a separate explicit operation after verification;
+- permit a manually invoked research action for an already-active goal, requiring goal.execute, web.read and research.persist; no scheduler or autonomous background execution is added;
+- a host-injected SearchProvider contract can return bounded candidate URLs; each URL is revalidated against the same allowlist before it enters a ResearchPlan; provider snippets and titles remain untrusted metadata;
+- no semantic contradiction detection, source reputation scoring, automatic truth claims, or concrete live search-provider adapter is included.
+
 ### Remaining phases
-1. Host integration and configuration.
-2. Bounded scheduler and goal execution.
+1. Host integration and a trusted search-provider/transport adapter.
+2. Bounded scheduler and approval-aware goal execution.
 3. Skill registry, sandbox and evaluation.
 4. Git proposal/PR workflow.
 5. Authenticated API and dashboard.
