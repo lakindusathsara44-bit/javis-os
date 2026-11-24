@@ -22,12 +22,13 @@
 
 `AccountStore.bootstrap_owner(..., bootstrap_enabled=True)` is a domain-level one-time setup primitive. It is not an HTTP endpoint and must never be exposed to unauthenticated web requests.
 
-A future deployment command must:
-1. run only from a trusted local/administrative setup context;
-2. obtain the initial owner's credentials without logging or persisting plaintext;
-3. explicitly enable bootstrap for that one invocation;
-4. refuse to run once any account exists;
-5. disable/remove the bootstrap path after successful initialization.
+The repository provides `scripts/web_creature_bootstrap_owner.py`. Run it only from a trusted local/administrative setup context:
+
+```bash
+python scripts/web_creature_bootstrap_owner.py --enable-bootstrap --database /secure/path/creature-auth.sqlite3
+```
+
+The command requires an explicit flag and an interactive confirmation, obtains the password through a hidden prompt, refuses to create a second owner, and does not accept passwords as command-line arguments or environment variables. It must be run against a database path outside public/static directories.
 
 No default owner, password, invitation or secret is committed to the repository.
 
