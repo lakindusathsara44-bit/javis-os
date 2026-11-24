@@ -200,7 +200,7 @@ class KnowledgePromotionTests(unittest.TestCase):
 
     def test_latest_rejection_blocks_memory_promotion(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            grants = frozenset({"memory.write", "knowledge.verify", "knowledge.promote"})
+            grants = frozenset({"memory.write", "knowledge.verify", "knowledge.promote", "research.read"})
             service = CreatureService(
                 CreatureIdentity("web-creature-001"),
                 CreatureStore(Path(directory) / "creature.sqlite3"),
