@@ -1,16 +1,16 @@
 # WEB CREATURE — Technical Implementation Specification
 
-**Project:** APOLONIA ALPHA  
+**Project:** Independent WEB CREATURE  
 **Component:** WEB CREATURE  
 **Specification:** 1.0 (foundation draft)  
 **Status:** Proposed; implementation is incremental  
 **Environment:** Hybrid (local + permitted internet resources)  
-**Identity:** Independent entity under APOLONIA ALPHA  
+**Identity:** Independent project and identity  
 **Evolution:** Combined (automatic skill-level changes; reviewed code changes)
 
 ## 1. Purpose and non-goals
 
-WEB CREATURE is an autonomous software agent subsystem with its own identity, lifecycle, goals, memory, observations, skills and measurable improvement history. It is independently addressable and owns its internal state, while using APOLONIA ALPHA's approved model, storage and tool infrastructure.
+WEB CREATURE is a standalone AI companion project with its own identity, lifecycle, goals, memory, observations, skills and measurable improvement history. It owns its codebase boundaries, memory, credentials, permissions, security policy, deployment and roadmap. It is not ApoloniaAI and is not part of the Apokolips website. No shared infrastructure, identity, memory or permissions are assumed.
 
 It is **not** a claim of consciousness, sentience, biological life or unrestricted autonomy. It must not be able to rewrite its own trust boundary, grant itself permissions, access secrets, or deploy arbitrary code.
 
@@ -74,7 +74,7 @@ Memory classes:
 - **Procedural:** validated skills and workflows.
 - **Experimental:** hypotheses, test inputs/outputs and evaluation reports.
 
-Every memory item should carry a source, creation time, confidence/verification state and content hash where applicable. Unverified content is not promoted to trusted knowledge. User-specific APOLONIA AI memory is a separate data domain; only explicitly authorized, minimized context may cross the boundary.
+Every memory item should carry a source, creation time, confidence/verification state and content hash where applicable. Unverified content is not promoted to trusted knowledge. Memory belonging to ApoloniaAI or any other system is a separate data domain and is never imported automatically.
 
 The foundation uses SQLite for local metadata and events. A later migration may use PostgreSQL/pgvector, but the storage interface must remain replaceable.
 
@@ -183,7 +183,7 @@ All state-changing endpoints require host authentication, authorization, CSRF pr
 - do not mount HTTP routes or create a web server as a package import side effect.
 
 ### Remaining phases
-1. Authenticated host API routes and dashboard UI, mounted explicitly by APOLONIA.
+1. Authenticated host API routes and dashboard UI, mounted explicitly by the WEB CREATURE host.
 2. Trusted search-provider/transport adapters with DNS pinning, egress policy and quotas.
 3. Bounded scheduler and approval-aware goal execution.
 4. Skill registry, sandbox and evaluation.
