@@ -15,6 +15,27 @@ from typing import Protocol
 from .observation import TransportResponse, WebObservationPolicy
 
 
+class SearchResult:
+    """Untrusted search metadata; only its URL is used to build a bounded plan."""
+    title: str
+    url: str
+    snippet: str = ""
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.title, str) or len(self.title) > 300:
+            raise ValueError("search result title must be a string of at most 300 characters")
+        if not isinstance(self.url, str) or not self.url.strip() or len(self.url) > 2048:
+            raise ValueError("search result URL must contain 1-2048 characters")
+        if not isinstance(self.snippet, str) or len(self.snippet) > 2000:
+            raise ValueError("search result snippet must be a string of at most 2000 characters")
+
+
+class SearchProvider(Protocol):
+    def search(self, query: str, *, max_results: int) -> list[SearchResult] | tuple[SearchResult, ...]:
+        """Return bounded untrusted results; host owns credentials, quotas and network policy."""
+        ...
+
+
 class WebTransport(Protocol):
     def fetch(self, url: str, *, timeout_seconds: float, max_bytes: int) -> TransportResponse:
         """Fetch one URL without automatic redirects under the host network policy."""
@@ -130,13 +151,37 @@ def _extract(response: TransportResponse) -> tuple[str, str, str]:
 class ResearchEngine:
     """Fetches only explicitly planned, allowlisted sources through an injected transport."""
 
-    def __init__(self, policy: WebObservationPolicy, transport: WebTransport) -> None:
+    def __init__(
+        self, policy: WebObservationPolicy, transport: WebTransport,
+        search_provider: SearchProvider | None = None,
+    ) -> None:
         if not isinstance(policy, WebObservationPolicy):
             raise TypeError("policy must be a WebObservationPolicy")
         if not callable(getattr(transport, "fetch", None)):
             raise TypeError("transport must provide a fetch method")
+        if search_provider is not None and not callable(getattr(search_provider, "search", None)):
+            raise TypeError("search_provider must provide a search method or be None")
         self.policy = policy
         self.transport = transport
+        self.search_provider = search_provider
+
+    def discover(self, question: str) -> ResearchPlan:
+        """Ask the injected host provider for URLs, then apply the same strict allowlist."""
+        if self.search_provider is None:
+            raise RuntimeError("no host-approved search provider is configured")
+        if not isinstance(question, str) or not question.strip() or len(question) > 1000:
+            raise ValueError("question must contain 1-1000 characters")
+        results = self.search_provider.search(question.strip(), max_results=self.policy.max_sources)
+        if not isinstance(results, (list, tuple)) or len(results) > self.policy.max_sources:
+            raise ValueError("search provider returned an invalid or oversized result set")
+        urls = []
+        for item in results:
+            if not isinstance(item, SearchResult):
+                raise TypeError("search provider results must be SearchResult values")
+            urls.append(self.policy.validate_url(item.url))
+        if not urls:
+            raise ValueError("search provider returned no usable results")
+        return ResearchPlan.create(question, urls)
 
     def run(self, plan: ResearchPlan) -> ResearchReport:
         if not isinstance(plan, ResearchPlan):
