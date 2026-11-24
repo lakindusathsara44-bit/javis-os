@@ -50,12 +50,12 @@ class AccountStoreTests(unittest.TestCase):
     def test_invitation_registration_is_single_use_and_token_is_not_stored(self) -> None:
         owner = self.create_owner()
         invite = self.store.issue_invitation(owner.account_id)
-        self.assertNotEqual(stored, invite.token)
         with sqlite3.connect(self.database) as db:
             stored = db.execute(
                 "SELECT token_sha256 FROM creature_invitations WHERE invitation_id=?",
                 (invite.invitation_id,),
             ).fetchone()[0]
+        self.assertNotEqual(stored, invite.token)
         import hashlib
         self.assertEqual(stored, hashlib.sha256(invite.token.encode()).hexdigest())
         member = self.store.accept_invitation(
