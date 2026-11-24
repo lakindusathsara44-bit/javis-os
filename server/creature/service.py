@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 from .identity import CreatureIdentity
+from .dashboard import DashboardSnapshot, build_dashboard_snapshot
 from .lifecycle import CreatureLifecycle
 from .models import CreatureEvent, CreatureGoal, CreatureMemory, CreatureState, GoalStatus
 from .permissions import CapabilityPolicy
 from .store import CreatureStore
+from .verification import EvidenceFinding, KnowledgeReview, ResearchVerifier, ReviewDecision
 from .observation import LocalFileObserver, LocalObservation
 from .research import ResearchEngine, ResearchPlan, ResearchReport
 
@@ -38,6 +40,13 @@ class CreatureService:
         self.local_observer = local_observer
         self.research_engine = research_engine
         self.lifecycle = CreatureLifecycle()
+        self.verifier = ResearchVerifier()
+
+    def dashboard_snapshot(self) -> DashboardSnapshot:
+        """Return an owner-authorized, content-free operational status snapshot."""
+        self.policy.require("dashboard.read")
+        summary = self.store.dashboard_summary()
+        return build_dashboard_snapshot(self.identity, self.status, summary)
 
     @property
     def status(self) -> CreatureState:
@@ -126,6 +135,132 @@ class CreatureService:
             content_hash=observation.content_hash, size_bytes=observation.size_bytes,
         )
         return observation
+
+    def _load_research_report(self, research_id: int) -> ResearchReport:
+        saved = self.store.get_research_report(research_id)
+        if saved is None:
+            raise KeyError(f"research report not found: {research_id}")
+        from .research import SourceEvidence
+        raw = saved["report"]
+        return ResearchReport(
+            question=raw["question"],
+            sources=tuple(SourceEvidence(**item) for item in raw["sources"]),
+            shared_statements=tuple(raw["shared_statements"]),
+            unique_statements=tuple((domain, tuple(items)) for domain, items in raw["unique_statements"]),
+            generated_at=raw["generated_at"],
+        )
+
+    def research_and_store(self, plan: ResearchPlan) -> tuple[int, ResearchReport]:
+        """Run a bounded research plan and persist its unverified evidence report."""
+        self.policy.require("research.persist")
+        report = self.research(plan)
+        research_id = self.store.save_research_report(report)
+        self._audit(
+            "research.persisted", research_id=research_id,
+            question=report.question, source_count=len(report.sources),
+        )
+        return research_id, report
+
+    def research_from_search(self, question: str) -> tuple[int, ResearchReport]:
+        """Discover URLs through the host provider, then persist bounded source evidence."""
+        self.policy.require("web.search")
+        if self.research_engine is None:
+            raise RuntimeError("no host-approved research engine is configured")
+        plan = self.research_engine.discover(question)
+        return self.research_and_store(plan)
+
+    def research_goal_from_search(self, goal_id: int, question: str) -> tuple[int, ResearchReport]:
+        self.policy.require("goal.execute")
+        if self.status != CreatureState.ACTIVE:
+            raise RuntimeError("creature must be active to execute a goal")
+        goal = self.store.get_goal(goal_id)
+        if goal is None:
+            raise KeyError(f"goal not found: {goal_id}")
+        if goal["status"] != GoalStatus.ACTIVE.value:
+            raise RuntimeError("goal must be active before research execution")
+        research_id, report = self.research_from_search(question)
+        self._audit("goal.research.discovered", goal_id=goal_id, research_id=research_id)
+        return research_id, report
+
+    def research_goal(self, goal_id: int, plan: ResearchPlan) -> tuple[int, ResearchReport]:
+        """Execute one explicitly requested research action for an already-active goal."""
+        self.policy.require("goal.execute")
+        if self.status != CreatureState.ACTIVE:
+            raise RuntimeError("creature must be active to execute a goal")
+        goal = self.store.get_goal(goal_id)
+        if goal is None:
+            raise KeyError(f"goal not found: {goal_id}")
+        if goal["status"] != GoalStatus.ACTIVE.value:
+            raise RuntimeError("goal must be active before research execution")
+        research_id, report = self.research_and_store(plan)
+        self._audit("goal.research.completed", goal_id=goal_id, research_id=research_id)
+        return research_id, report
+
+    def evaluate_research(self, research_id: int) -> tuple[EvidenceFinding, ...]:
+        self.policy.require("research.read")
+        report = self._load_research_report(research_id)
+        return self.verifier.evaluate(report)
+
+    def review_knowledge_claim(
+        self,
+        research_id: int,
+        finding_id: str,
+        decision: ReviewDecision,
+        *,
+        reviewer: str,
+        rationale: str,
+    ) -> int:
+        """Record an explicit reviewer decision; no source can self-verify."""
+        self.policy.require("knowledge.verify")
+        if self.status != CreatureState.ACTIVE:
+            raise RuntimeError("creature must be active to review knowledge")
+        findings = self.verifier.evaluate(self._load_research_report(research_id))
+        finding = next((item for item in findings if item.finding_id == finding_id), None)
+        if finding is None:
+            raise KeyError(f"finding not found in research report: {finding_id}")
+        review = self.verifier.review(
+            finding, decision, reviewer=reviewer, rationale=rationale,
+        )
+        review_id = self.store.save_knowledge_review(research_id, review)
+        self._audit(
+            "knowledge.reviewed", research_id=research_id, finding_id=finding_id,
+            decision=decision.value, reviewer=review.reviewer,
+        )
+        return review_id
+
+    def promote_verified_claim_to_memory(self, research_id: int, finding_id: str) -> int:
+        """Promote only after a separate explicit verification and promotion grant."""
+        self.policy.require("knowledge.promote")
+        self.policy.require("memory.write")
+        if self.status != CreatureState.ACTIVE:
+            raise RuntimeError("creature must be active to promote knowledge")
+        reviews = self.store.list_knowledge_reviews(research_id)
+        latest_review = next(
+            (item for item in reversed(reviews) if item["finding_id"] == finding_id),
+            None,
+        )
+        if latest_review is None or latest_review["decision"] != ReviewDecision.VERIFIED.value:
+            raise PermissionError("finding has no current explicit verified review")
+        finding = next(
+            (item for item in self.verifier.evaluate(self._load_research_report(research_id))
+             if item.finding_id == finding_id),
+            None,
+        )
+        if finding is None:
+            raise KeyError(f"finding not found in research report: {finding_id}")
+        confidence = 0.8 if finding.evidence_level.value == "corroborated" else 0.6
+        memory = CreatureMemory.create(
+            "semantic", finding.statement,
+            source=f"research:{research_id}#finding:{finding_id}",
+            confidence=confidence, source_kind="web", verification_status="verified",
+            tags=("research", "reviewed"),
+        )
+        memory_id = self.remember(memory)
+        self._audit(
+            "knowledge.promoted", research_id=research_id,
+            finding_id=finding_id, memory_id=memory_id,
+        )
+        return memory_id
 
     def research(self, plan: ResearchPlan) -> ResearchReport:
         self.policy.require("web.read")
