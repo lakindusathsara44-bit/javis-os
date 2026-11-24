@@ -36,6 +36,8 @@ class CreatureStore:
     """A small file-backed local store with explicit initialization."""
 
     def __init__(self, database_path: str | Path) -> None:
+        if not isinstance(database_path, (str, Path)) or not str(database_path).strip():
+            raise ValueError("database_path must be a non-empty filesystem path")
         self.database_path = Path(database_path)
         if str(self.database_path) == ":memory:":
             raise ValueError("CreatureStore requires a file-backed database for durable connections")
@@ -52,6 +54,8 @@ class CreatureStore:
         return connection
 
     def append_event(self, event: CreatureEvent) -> int:
+        if not isinstance(event, CreatureEvent):
+            raise TypeError("event must be a CreatureEvent")
         with closing(self._connect()) as connection, connection:
             cursor = connection.execute(
                 "INSERT INTO creature_events(event_type, payload_json, created_at) VALUES (?, ?, ?)",
@@ -74,6 +78,8 @@ class CreatureStore:
         ]
 
     def save_memory(self, memory: CreatureMemory) -> int:
+        if not isinstance(memory, CreatureMemory):
+            raise TypeError("memory must be a CreatureMemory")
         with closing(self._connect()) as connection, connection:
             cursor = connection.execute(
                 "INSERT INTO creature_memory(memory_type, content, source, confidence, created_at) "
@@ -85,7 +91,10 @@ class CreatureStore:
     def list_memory(self, memory_type: str | None = None, limit: int = 100) -> list[dict[str, Any]]:
         if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 1000:
             raise ValueError("limit must be an integer between 1 and 1000")
-        if memory_type is not None and memory_type not in {"episodic", "semantic", "procedural", "experimental"}:
+        if memory_type is not None and (
+            not isinstance(memory_type, str)
+            or memory_type not in {"episodic", "semantic", "procedural", "experimental"}
+        ):
             raise ValueError("unsupported memory_type")
         query = "SELECT id, memory_type, content, source, confidence, created_at FROM creature_memory"
         params: tuple[Any, ...] = ()
