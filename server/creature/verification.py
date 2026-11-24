@@ -57,13 +57,14 @@ class ResearchVerifier:
         findings: dict[str, EvidenceFinding] = {}
         all_domains = tuple(dict.fromkeys(source.domain for source in report.sources))
         all_hashes = tuple(dict.fromkeys(source.content_hash for source in report.sources))
+        shared_level = EvidenceLevel.CORROBORATED if len(report.sources) >= 2 else EvidenceLevel.SINGLE_SOURCE
         for statement in report.shared_statements:
             key = _normalise(statement)
             if not key:
                 continue
             finding_id = hashlib.sha256(key.encode("utf-8")).hexdigest()
             findings[finding_id] = EvidenceFinding(
-                finding_id, statement, EvidenceLevel.CORROBORATED, all_domains, all_hashes, False
+                finding_id, statement, shared_level, all_domains, all_hashes, False
             )
         source_by_domain: dict[str, list[str]] = {}
         for source in report.sources:
