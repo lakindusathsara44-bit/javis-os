@@ -4,6 +4,7 @@ Importing this package is intentionally side-effect free. The trusted host
 must explicitly construct and initialize a CreatureService.
 """
 from .identity import CreatureIdentity
+from .dashboard import DashboardSnapshot
 from .lifecycle import CreatureLifecycle, CreatureState
 from .models import CreatureGoal, CreatureMemory, GoalStatus
 from .observation import LocalFileObserver, LocalFilePolicy, LocalObservation, TransportResponse, WebObservationPolicy
@@ -22,6 +23,7 @@ __all__ = [
     "CreatureService",
     "CreatureState",
     "CreatureStore",
+    "DashboardSnapshot",
     "EvidenceFinding",
     "EvidenceLevel",
     "KnowledgeReview",
